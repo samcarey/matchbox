@@ -510,9 +510,9 @@ fn create_data_channel(
                 let uarray = js_sys::Uint8Array::new(&arraybuf);
                 let body = uarray.to_vec();
 
-                incoming_tx
-                    .unbounded_send((peer_id, body.into_boxed_slice()))
-                    .unwrap();
+                if let Err(e) = incoming_tx.unbounded_send((peer_id, body.into_boxed_slice())) {
+                    error!("error sending to incoming_tx: {e:?}")
+                }
             }
         },
     );

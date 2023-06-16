@@ -11,7 +11,7 @@ use futures::{future::Either, stream::FuturesUnordered, Future, FutureExt, Strea
 use futures_channel::mpsc::{UnboundedReceiver, UnboundedSender};
 use futures_timer::Delay;
 use futures_util::select;
-use log::{debug, warn};
+use log::{debug, error, warn};
 use matchbox_protocol::PeerId;
 use messages::*;
 pub(crate) use socket::MessageLoopChannels;
@@ -214,7 +214,9 @@ async fn message_loop<M: Messenger>(
                             .get_mut(&peer)
                             .expect("couldn't find data channel for peer")
                             .get_mut(channel_index).unwrap_or_else(|| panic!("couldn't find data channel with index {channel_index}"));
-                        data_channel.send(packet).unwrap();
+                        if let Err(e) = data_channel.send(packet) {
+                            error!("error sending to data channel: {e:?}")
+                        }
 
                     }
                     Some((_, None)) | None => {
