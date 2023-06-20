@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::net::SocketAddr;
+use std::{net::SocketAddr, path::PathBuf};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -10,4 +10,6 @@ use std::net::SocketAddr;
 pub struct Args {
     #[clap(default_value = "0.0.0.0:3536", env)]
     pub host: SocketAddr,
+    pub cert: Option<PathBuf>,
+    pub key: Option<PathBuf>,
 }

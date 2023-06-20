@@ -4,6 +4,7 @@ mod signaling;
 
 use crate::signaling::{ws_handler, ServerState};
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
+use axum_server::tls_rustls::RustlsConfig;
 use clap::Parser;
 use std::{net::SocketAddr, sync::Arc};
 use tower_http::{
@@ -59,12 +60,22 @@ async fn main() {
         )
         .with_state(server_state);
 
-    // Run server
+    // configure certificate and private key used by https
     info!("Matchbox Signaling Server: {}", args.host);
-    axum::Server::bind(&args.host)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .expect("Unable to run signaling server, is it already running?");
+    if let (Some(cert), Some(key)) = (args.cert, args.key) {
+        let tls_config = RustlsConfig::from_pem_file(cert, key).await.unwrap();
+        // Run server
+        info!("Matchbox Signaling Server: {}", args.host);
+        axum_server::bind_rustls(args.host, tls_config)
+            .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+            .await
+            .expect("Unable to run signaling server, is it already running?");
+    } else {
+        axum_server::bind(args.host)
+            .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+            .await
+            .expect("Unable to run signaling server, is it already running?");
+    }
 }
 
 pub async fn health_handler() -> impl IntoResponse {
